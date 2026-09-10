@@ -4,10 +4,13 @@ import { TopBar } from './TopBar';
 import { GreetingHeader } from './GreetingHeader';
 import { NoteGrid } from './NoteGrid';
 import { DiaryView } from './diary/DiaryView';
+import { CalendarView } from './calendar/CalendarView';
 import { useNotesStore } from '../stores/useNotesStore';
 
 export const MainWindow: React.FC<{ isMockup?: boolean }> = ({ isMockup = false }) => {
-  const { activeNav } = useNotesStore();
+  const { activeNav, viewMode } = useNotesStore();
+
+  const isCalendarView = activeNav === 'calendar' || viewMode === 'calendar';
 
   return (
     <div
@@ -30,6 +33,8 @@ export const MainWindow: React.FC<{ isMockup?: boolean }> = ({ isMockup = false 
           <main className="flex-1 overflow-y-auto px-7 pt-5 pb-6 xl:px-8 xl:pt-6 xl:pb-8">
             {activeNav === 'diary' ? (
               <DiaryView />
+            ) : isCalendarView ? (
+              <CalendarView />
             ) : (
               <>
                 <GreetingHeader />

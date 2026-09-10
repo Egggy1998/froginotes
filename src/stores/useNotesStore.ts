@@ -193,7 +193,7 @@ interface NotesState {
   activeFolder: FolderId | null;
   searchQuery: string;
   isCollapsed: boolean;
-  viewMode: 'grid' | 'list';
+  viewMode: 'grid' | 'list' | 'calendar';
   floatingPos: { x: number; y: number };
   showNoteModal: boolean;
   editingNote: Note | null;
@@ -219,7 +219,7 @@ interface NotesState {
   setSearchQuery: (query: string) => void;
   toggleCollapse: () => void;
   setCollapsed: (collapsed: boolean) => void;
-  setViewMode: (mode: 'grid' | 'list') => void;
+  setViewMode: (mode: 'grid' | 'list' | 'calendar') => void;
   setFloatingPos: (pos: { x: number; y: number }) => void;
   openNewNoteModal: (folderId?: FolderId) => void;
   openEditNoteModal: (note: Note) => void;

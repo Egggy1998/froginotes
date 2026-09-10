@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Search, LayoutGrid, List, Plus, ChevronDown, Cloud, CloudCheck, RefreshCw } from 'lucide-react';
+import { Search, LayoutGrid, List, CalendarDays, Plus, ChevronDown, Cloud, CloudCheck, RefreshCw } from 'lucide-react';
 import { useNotesStore } from '../stores/useNotesStore';
 import { WindowControls } from './WindowControls';
 
@@ -125,6 +125,17 @@ export const TopBar: React.FC = () => {
             }`}
           >
             <List size={15} strokeWidth={2.2} />
+          </button>
+          <button
+            onClick={() => setViewMode('calendar')}
+            title={t.viewCalendar}
+            className={`w-7 h-7 flex items-center justify-center rounded-lg transition-all ${
+              viewMode === 'calendar'
+                ? 'bg-white text-[#284E34] shadow-xs'
+                : 'text-[#6C8570] hover:text-[#284E34]'
+            }`}
+          >
+            <CalendarDays size={15} strokeWidth={2.2} />
           </button>
         </div>
 

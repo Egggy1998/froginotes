@@ -70,7 +70,7 @@ export interface Note {
   updatedAt: string;
 }
 
-export type NavSection = 'notes' | 'today' | 'starred' | 'reminders' | 'diary' | 'archive' | 'trash';
+export type NavSection = 'notes' | 'today' | 'starred' | 'reminders' | 'calendar' | 'diary' | 'archive' | 'trash';
 
 export type DiaryWeather = 'sunny' | 'cloudy' | 'rainy' | 'cozy';
 
