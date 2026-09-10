@@ -1,0 +1,140 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-main: #EFF7E7;
+    --bg-card-yellow: #FFF5D6;
+    --bg-card-mint: #E2F6D8;
+    --bg-card-peach: #FDECE8;
+    --bg-card-lime: #ECF8E5;
+    --bg-card-ideas: #FDF1EC;
+    --bg-card-pink: #FDEBE7;
+    --bg-card-blue: #E5F2FD;
+    --bg-card-butter: #FEF7D3;
+    --text-primary: #1E2B20;
+    --text-muted: #65786A;
+    --green-primary: #3E6848;
+    --green-active: #D8ECD7;
+  }
+}
+
+.font-handwriting {
+  font-family: 'Patrick Hand', cursive;
+}
+
+.font-rounded {
+  font-family: 'Quicksand', 'Nunito', sans-serif;
+}
+
+.font-fredoka {
+  font-family: 'Fredoka', sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body.landing-mode {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  height: auto !important;
+  min-height: 100vh !important;
+  background-color: #FAF9F5 !important;
+}
+
+body.desktop-mode {
+  overflow: hidden !important;
+  height: 100vh !important;
+  width: 100vw !important;
+}
+
+#root {
+  min-height: 100%;
+}
+
+body.desktop-mode #root {
+  height: 100vh !important;
+  overflow: hidden !important;
+}
+
+/* Custom subtle scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(62, 104, 72, 0.15);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(62, 104, 72, 0.3);
+}
+
+/* Cute Parallax & Hover Keyframes */
+@keyframes float-gentle {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes float-mug {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-6px) rotate(1.5deg);
+  }
+}
+
+@keyframes wiggle-cute {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-6deg) scale(1.06);
+  }
+  75% {
+    transform: rotate(6deg) scale(1.06);
+  }
+}
+
+@keyframes heart-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.6);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-16px) scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-32px) scale(0.8);
+  }
+}
+
+.animate-float-gentle {
+  animation: float-gentle 4.5s ease-in-out infinite;
+}
+
+.animate-float-mug {
+  animation: float-mug 5s ease-in-out infinite;
+}
+
+.hover-wiggle:hover {
+  animation: wiggle-cute 0.5s ease-in-out;
+}
+
+/* Draggable window region for desktop/electron */
+.app-drag-region {
+  -webkit-app-region: drag;
+}
+.app-no-drag {
+  -webkit-app-region: no-drag;
+}
