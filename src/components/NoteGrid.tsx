@@ -1,10 +1,11 @@
 import React from 'react';
+import { Plus, Sparkles } from 'lucide-react';
 import { useNotesStore } from '../stores/useNotesStore';
 import { StickyCard } from './StickyCard';
 import { FrogMascot } from './mascots/FrogMascot';
 
 export const NoteGrid: React.FC = () => {
-  const { notes, activeNav, activeFolder, searchQuery, viewMode, t } = useNotesStore();
+  const { notes, activeNav, activeFolder, searchQuery, viewMode, openNewNoteModal, resetToDefault, t } = useNotesStore();
 
   // Filter notes
   const filteredNotes = notes.filter((note) => {
@@ -129,14 +130,35 @@ export const NoteGrid: React.FC = () => {
     })();
 
     return (
-      <div className="h-[400px] flex flex-col items-center justify-center text-center p-8 select-none">
-        <FrogMascot mood={emptyConfig.mood} size={60} className="mb-3 animate-bounce" />
+      <div className="h-[430px] flex flex-col items-center justify-center text-center p-8 select-none">
+        <FrogMascot mood={emptyConfig.mood} size={64} className="mb-3 animate-float-gentle" />
         <h3 className="font-rounded font-extrabold text-lg text-[#284E34]">
           {emptyConfig.title}
         </h3>
-        <p className="text-sm font-medium text-[#748C79] mt-1 font-handwriting text-base">
+        <p className="text-sm font-medium text-[#748C79] mt-1 font-handwriting text-base max-w-sm">
           {emptyConfig.subtitle}
         </p>
+
+        {!isSearching && activeNav === 'notes' && !activeFolder && (
+          <div className="flex flex-wrap items-center justify-center gap-3 mt-6">
+            <button
+              type="button"
+              onClick={() => openNewNoteModal()}
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#3E6848] hover:bg-[#32553A] text-white rounded-full text-xs font-bold shadow-[0_4px_14px_rgba(62,104,72,0.22)] transition-all cursor-pointer active:scale-95"
+            >
+              <Plus size={14} strokeWidth={2.5} />
+              <span>Tạo ghi chú đầu tiên 🍃</span>
+            </button>
+            <button
+              type="button"
+              onClick={resetToDefault}
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-[#F0F5EE] text-[#426447] border border-[#D5E1D2] rounded-full text-xs font-bold shadow-2xs transition-all cursor-pointer"
+            >
+              <Sparkles size={13} className="text-amber-500" />
+              <span>Nạp 9 ghi chú mẫu</span>
+            </button>
+          </div>
+        )}
       </div>
     );
   }

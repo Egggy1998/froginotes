@@ -270,8 +270,8 @@ interface NotesState {
   resetToDefault: () => void;
 }
 
-const STORAGE_KEY = 'froginotes_data_v6_vi';
-const DIARY_STORAGE_KEY = 'froginotes_diary_v1';
+const STORAGE_KEY = 'froginotes_data_v7_empty';
+const DIARY_STORAGE_KEY = 'froginotes_diary_v2_empty';
 const USER_STORAGE_KEY = 'froginotes_user_v1';
 const LANG_KEY = 'froginotes_lang';
 const SYNC_ENABLED_KEY = 'froginotes_cloud_sync';
@@ -295,13 +295,13 @@ const getInitialNotes = (): Note[] => {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       }
     } catch (e) {
       console.error('Failed to load notes from localStorage', e);
     }
   }
-  return INITIAL_NOTES_VI;
+  return []; // Default empty board for fresh install
 };
 
 const getInitialDiaryEntries = (): DiaryEntry[] => {
@@ -310,13 +310,13 @@ const getInitialDiaryEntries = (): DiaryEntry[] => {
       const saved = localStorage.getItem(DIARY_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       }
     } catch (e) {
       console.error('Failed to load diary from localStorage', e);
     }
   }
-  return INITIAL_DIARY_ENTRIES;
+  return []; // Default empty diary for fresh install
 };
 
 const getInitialLandingView = (): boolean => {

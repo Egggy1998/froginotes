@@ -10,7 +10,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "electron:start": "electron electron/main.cjs",
-    "pack:win": "electron-packager . FrogiNotes --platform=win32 --arch=x64 --out=release-builds --overwrite --prune=true --icon=icon.ico --ignore=\"^(src|node_modules/@types|node_modules/typescript)\"",
+    "pack:win": "electron-packager . FrogiNotes --platform=win32 --arch=x64 --out=release-builds --overwrite --prune=true --icon=icon.ico --ignore=\"^(src|scripts|release-builds|\\.git|.*\\.zip|screenshot_.*|node_modules/@types|node_modules/typescript)\"",
     "pack:mac": "electron-builder build --mac zip --arm64 --x64"
   },
   "build": {
