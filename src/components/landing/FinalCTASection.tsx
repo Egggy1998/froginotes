@@ -1,7 +1,11 @@
 import React from 'react';
 import { Play } from 'lucide-react';
 import { FrogMascot } from '../mascots/FrogMascot';
-import { OFFICIAL_DOWNLOAD_URL } from '../../lib/constants';
+import {
+  OFFICIAL_DOWNLOAD_URL,
+  WINDOWS_DOWNLOAD_URL,
+  MAC_ARM64_DOWNLOAD_URL,
+} from '../../lib/constants';
 
 interface FinalCTASectionProps {
   onDownloadClick?: () => void;
@@ -66,17 +70,27 @@ export const FinalCTASection: React.FC<FinalCTASectionProps> = ({
             </p>
 
             {/* Buttons */}
-            <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
-              {/* Primary Download Button */}
+            <div className="flex flex-wrap items-center justify-center gap-3.5 pt-4">
+              {/* Primary Windows Download Button */}
               <a
-                href={OFFICIAL_DOWNLOAD_URL}
+                href={WINDOWS_DOWNLOAD_URL}
                 onClick={onDownloadClick}
-                className="inline-flex items-center gap-2.5 px-8 py-3.5 bg-[#3D6E4A] hover:bg-[#325A3C] text-white rounded-full text-sm font-bold shadow-[0_8px_24px_rgba(61,110,74,0.30)] hover:shadow-[0_10px_28px_rgba(61,110,74,0.40)] transition-all cursor-pointer active:scale-95"
+                className="inline-flex items-center gap-2 px-7 py-3.5 bg-[#3D6E4A] hover:bg-[#325A3C] text-white rounded-full text-sm font-bold shadow-[0_8px_24px_rgba(61,110,74,0.30)] hover:shadow-[0_10px_28px_rgba(61,110,74,0.40)] transition-all cursor-pointer active:scale-95"
               >
-                <svg width="15" height="15" viewBox="0 0 88 88" fill="currentColor">
+                <svg width="14" height="14" viewBox="0 0 88 88" fill="currentColor">
                   <path d="M0 12.402l35.687-4.86.016 34.423-35.67.203zm35.67 33.529l.028 34.453L.028 75.48.016 46.126zM40.97 6.425L87.95 0v41.528l-46.98.375zm47.01 45.421V88L40.97 81.428l.027-34.805z" />
                 </svg>
-                <span>Tải FrogiNotes →</span>
+                <span>Tải cho Windows</span>
+              </a>
+
+              {/* macOS Download Button */}
+              <a
+                href={MAC_ARM64_DOWNLOAD_URL}
+                onClick={onDownloadClick}
+                className="inline-flex items-center gap-2 px-6 py-3.5 bg-[#2B4E34] hover:bg-[#1E3A27] text-white rounded-full text-sm font-bold shadow-[0_8px_24px_rgba(43,78,52,0.30)] hover:shadow-[0_10px_28px_rgba(43,78,52,0.40)] transition-all cursor-pointer active:scale-95"
+              >
+                <span className="text-base leading-none">🍏</span>
+                <span>Tải cho macOS</span>
               </a>
 
               {/* Secondary Explore Button */}

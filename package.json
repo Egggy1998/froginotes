@@ -10,7 +10,31 @@
     "build": "vite build",
     "preview": "vite preview",
     "electron:start": "electron electron/main.cjs",
-    "pack:win": "electron-packager . FrogiNotes --platform=win32 --arch=x64 --out=release-builds --overwrite --prune=true --icon=icon.ico --ignore=\"^(src|node_modules/@types|node_modules/typescript)\""
+    "pack:win": "electron-packager . FrogiNotes --platform=win32 --arch=x64 --out=release-builds --overwrite --prune=true --icon=icon.ico --ignore=\"^(src|node_modules/@types|node_modules/typescript)\"",
+    "pack:mac": "electron-builder build --mac zip --arm64 --x64"
+  },
+  "build": {
+    "appId": "com.froginotes.app",
+    "productName": "FrogiNotes",
+    "directories": {
+      "output": "release-builds/mac"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json",
+      "public/**/*"
+    ],
+    "mac": {
+      "target": [
+        {
+          "target": "zip",
+          "arch": ["arm64", "x64"]
+        }
+      ],
+      "icon": "icon.png",
+      "category": "public.app-category.productivity"
+    }
   },
   "dependencies": {
     "@libsql/client": "^0.18.0",
@@ -28,6 +52,7 @@
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.4",
     "electron": "^34.0.0",
+    "electron-builder": "^26.15.3",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.7.3",
     "vite": "^6.0.0"

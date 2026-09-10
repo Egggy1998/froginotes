@@ -1,8 +1,13 @@
-import React from 'react';
-import { User, Sparkles } from 'lucide-react';
+import React, { useState } from 'react';
+import { User, Sparkles, ChevronDown } from 'lucide-react';
 import { FrogMascot } from '../mascots/FrogMascot';
 import { useNotesStore } from '../../stores/useNotesStore';
-import { OFFICIAL_DOWNLOAD_URL } from '../../lib/constants';
+import {
+  OFFICIAL_DOWNLOAD_URL,
+  WINDOWS_DOWNLOAD_URL,
+  MAC_ARM64_DOWNLOAD_URL,
+  MAC_X64_DOWNLOAD_URL,
+} from '../../lib/constants';
 
 interface LandingHeaderProps {
   onDownloadClick?: () => void;
@@ -14,6 +19,7 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
   onDemoClick,
 }) => {
   const { currentUser, setShowAuthModal, setShowAccountModal } = useNotesStore();
+  const [showDownloadMenu, setShowDownloadMenu] = useState(false);
 
   const scrollToSection = (id: string) => {
     const el = document.getElementById(id);
@@ -107,17 +113,96 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
             </button>
           )}
 
-          <a
-            href={OFFICIAL_DOWNLOAD_URL}
-            onClick={onDownloadClick}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#3D6E4A] hover:bg-[#325A3C] text-white rounded-full text-xs font-bold shadow-[0_4px_14px_rgba(61,110,74,0.22)] hover:shadow-[0_6px_18px_rgba(61,110,74,0.32)] transition-all cursor-pointer active:scale-95"
-          >
-            {/* Windows 4-square icon */}
-            <svg width="13" height="13" viewBox="0 0 88 88" fill="currentColor">
-              <path d="M0 12.402l35.687-4.86.016 34.423-35.67.203zm35.67 33.529l.028 34.453L.028 75.48.016 46.126zM40.97 6.425L87.95 0v41.528l-46.98.375zm47.01 45.421V88L40.97 81.428l.027-34.805z" />
-            </svg>
-            <span>Tải cho Windows</span>
-          </a>
+          {/* Download Dropdown */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowDownloadMenu(!showDownloadMenu)}
+              className="inline-flex items-center gap-2 px-4.5 py-2.5 bg-[#3D6E4A] hover:bg-[#325A3C] text-white rounded-full text-xs font-bold shadow-[0_4px_14px_rgba(61,110,74,0.22)] hover:shadow-[0_6px_18px_rgba(61,110,74,0.32)] transition-all cursor-pointer active:scale-95"
+            >
+              {/* OS Icons */}
+              <svg width="13" height="13" viewBox="0 0 88 88" fill="currentColor">
+                <path d="M0 12.402l35.687-4.86.016 34.423-35.67.203zm35.67 33.529l.028 34.453L.028 75.48.016 46.126zM40.97 6.425L87.95 0v41.528l-46.98.375zm47.01 45.421V88L40.97 81.428l.027-34.805z" />
+              </svg>
+              <span>Tải app</span>
+              <ChevronDown size={13} className={`transition-transform duration-200 ${showDownloadMenu ? 'rotate-180' : ''}`} />
+            </button>
+
+            {/* Dropdown Menu */}
+            {showDownloadMenu && (
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowDownloadMenu(false)}
+                />
+                <div className="absolute right-0 top-12 w-64 bg-white rounded-2xl shadow-xl border border-[#DDE7DB] p-2 z-50 text-xs font-semibold text-[#19271D] space-y-1 animate-in fade-in zoom-in-95 duration-100">
+                  <div className="px-2.5 py-1 text-[10.5px] font-bold text-[#6D8B71] uppercase tracking-wider">
+                    Chọn phiên bản
+                  </div>
+
+                  {/* Windows Option */}
+                  <a
+                    href={WINDOWS_DOWNLOAD_URL}
+                    onClick={() => {
+                      setShowDownloadMenu(false);
+                      onDownloadClick?.();
+                    }}
+                    className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-[#F2F7EF] transition-colors group/item"
+                  >
+                    <div className="w-7 h-7 rounded-lg bg-[#EAF5E3] text-[#284E34] flex items-center justify-center font-bold">
+                      🪟
+                    </div>
+                    <div>
+                      <span className="block text-xs font-bold text-[#284E34] group-hover/item:text-[#1E3A27]">
+                        Windows x64 (.zip)
+                      </span>
+                      <span className="text-[10px] text-[#7A9380]">Windows 10 / 11 (64-bit)</span>
+                    </div>
+                  </a>
+
+                  {/* Mac Apple Silicon Option */}
+                  <a
+                    href={MAC_ARM64_DOWNLOAD_URL}
+                    onClick={() => {
+                      setShowDownloadMenu(false);
+                      onDownloadClick?.();
+                    }}
+                    className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-[#F2F7EF] transition-colors group/item"
+                  >
+                    <div className="w-7 h-7 rounded-lg bg-[#EAF5E3] text-[#284E34] flex items-center justify-center font-bold">
+                      🍏
+                    </div>
+                    <div>
+                      <span className="block text-xs font-bold text-[#284E34] group-hover/item:text-[#1E3A27]">
+                        macOS Apple Silicon
+                      </span>
+                      <span className="text-[10px] text-[#7A9380]">Mac M1 / M2 / M3 / M4</span>
+                    </div>
+                  </a>
+
+                  {/* Mac Intel Option */}
+                  <a
+                    href={MAC_X64_DOWNLOAD_URL}
+                    onClick={() => {
+                      setShowDownloadMenu(false);
+                      onDownloadClick?.();
+                    }}
+                    className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-[#F2F7EF] transition-colors group/item"
+                  >
+                    <div className="w-7 h-7 rounded-lg bg-[#EAF5E3] text-[#284E34] flex items-center justify-center font-bold">
+                      🍏
+                    </div>
+                    <div>
+                      <span className="block text-xs font-bold text-[#284E34] group-hover/item:text-[#1E3A27]">
+                        macOS Intel (x64)
+                      </span>
+                      <span className="text-[10px] text-[#7A9380]">Mac chạy chip Intel</span>
+                    </div>
+                  </a>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </header>
