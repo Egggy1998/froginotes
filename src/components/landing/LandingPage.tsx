@@ -7,28 +7,33 @@ import { HowItWorksSection } from './HowItWorksSection';
 import { FinalCTASection } from './FinalCTASection';
 import { DonateSection } from './DonateSection';
 import { LandingFooter } from './LandingFooter';
+import { AuthModal } from './AuthModal';
+import { AccountModal } from './AccountModal';
 import { MainWindow } from '../MainWindow';
 import { X, Download, Check } from 'lucide-react';
 import { FrogMascot } from '../mascots/FrogMascot';
+import { OFFICIAL_DOWNLOAD_URL } from '../../lib/constants';
 
 export const LandingPage: React.FC<{ onBackToApp?: () => void }> = ({ onBackToApp }) => {
   const [showDemoModal, setShowDemoModal] = useState(false);
   const [downloadToast, setDownloadToast] = useState(false);
 
   const handleDownload = () => {
-    // In desktop or web: trigger download toast
+    // Show happy download toast
     setDownloadToast(true);
-    setTimeout(() => setDownloadToast(false), 3500);
+    setTimeout(() => setDownloadToast(false), 4500);
 
-    // If served, trigger real download if release exists
+    // Trigger official Windows download from GitHub release CDN
     const link = document.createElement('a');
-    link.href = './release-builds/FrogiNotes-win32-x64/FrogiNotes.exe';
-    link.download = 'FrogiNotes-Setup.exe';
+    link.href = OFFICIAL_DOWNLOAD_URL;
+    link.download = 'FrogiNotes-v1.0.0-windows-x64.zip';
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
     document.body.appendChild(link);
     try {
       link.click();
     } catch {
-      // fallback
+      window.open(OFFICIAL_DOWNLOAD_URL, '_blank');
     }
     document.body.removeChild(link);
   };
@@ -74,6 +79,10 @@ export const LandingPage: React.FC<{ onBackToApp?: () => void }> = ({ onBackToAp
       </main>
 
       <LandingFooter />
+
+      {/* Auth & Account Modals */}
+      <AuthModal />
+      <AccountModal onOpenApp={onBackToApp} />
 
       {/* Interactive Demo Modal */}
       {showDemoModal && (

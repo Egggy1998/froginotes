@@ -90,6 +90,16 @@ export interface DiaryEntry {
 
 export type FolderId = 'personal' | 'work' | 'ideas' | 'health' | 'travel';
 
+export interface UserProfile {
+  id: string;
+  email: string;
+  name: string;
+  plan: 'free' | 'pro';
+  avatar?: string;
+  syncKey?: string;
+  createdAt: string;
+}
+
 export interface Folder {
   id: FolderId;
   name: string;

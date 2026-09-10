@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Note, NavSection, FolderId, DiaryEntry } from '../types';
+import { Note, NavSection, FolderId, DiaryEntry, UserProfile } from '../types';
 import {
   initDatabase,
   fetchNotesFromDB,
@@ -249,6 +249,16 @@ interface NotesState {
   updateDiaryEntry: (id: string, updates: Partial<DiaryEntry>) => void;
   deleteDiaryEntry: (id: string) => void;
 
+  // User Auth & Account
+  currentUser: UserProfile | null;
+  login: (email: string, name?: string, plan?: 'free' | 'pro') => void;
+  logout: () => void;
+  updateProfile: (updates: Partial<UserProfile>) => void;
+  showAuthModal: boolean;
+  setShowAuthModal: (show: boolean) => void;
+  showAccountModal: boolean;
+  setShowAccountModal: (show: boolean) => void;
+
   // Note CRUD
   addNote: (note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateNote: (id: string, updates: Partial<Note>) => void;
@@ -262,9 +272,22 @@ interface NotesState {
 
 const STORAGE_KEY = 'froginotes_data_v6_vi';
 const DIARY_STORAGE_KEY = 'froginotes_diary_v1';
+const USER_STORAGE_KEY = 'froginotes_user_v1';
 const LANG_KEY = 'froginotes_lang';
 const SYNC_ENABLED_KEY = 'froginotes_cloud_sync';
 const SYNC_KEY_STORAGE = 'froginotes_sync_key';
+
+const getInitialUser = (): UserProfile | null => {
+  if (typeof localStorage !== 'undefined') {
+    try {
+      const saved = localStorage.getItem(USER_STORAGE_KEY);
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error('Failed to load user profile', e);
+    }
+  }
+  return null;
+};
 
 const getInitialNotes = (): Note[] => {
   if (typeof localStorage !== 'undefined') {
@@ -335,6 +358,46 @@ export const useNotesStore = create<NotesState>((set, get) => ({
       localStorage.setItem(LANG_KEY, lang);
     }
     set({ language: lang, t: translations[lang] });
+  },
+
+  currentUser: getInitialUser(),
+  showAuthModal: false,
+  setShowAuthModal: (show: boolean) => set({ showAuthModal: show }),
+  showAccountModal: false,
+  setShowAccountModal: (show: boolean) => set({ showAccountModal: show }),
+
+  login: (email: string, name?: string, plan: 'free' | 'pro' = 'free') => {
+    const cleanEmail = email.trim();
+    const cleanName = name?.trim() || cleanEmail.split('@')[0] || 'Frogi Friend';
+    const profile: UserProfile = {
+      id: 'user-' + Date.now(),
+      email: cleanEmail,
+      name: cleanName,
+      plan,
+      syncKey: 'FROGI-' + cleanName.toUpperCase().replace(/\s+/g, '') + '-2026',
+      createdAt: new Date().toISOString().split('T')[0],
+    };
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(profile));
+    }
+    set({ currentUser: profile, showAuthModal: false });
+  },
+
+  logout: () => {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(USER_STORAGE_KEY);
+    }
+    set({ currentUser: null, showAccountModal: false });
+  },
+
+  updateProfile: (updates: Partial<UserProfile>) => {
+    const curr = get().currentUser;
+    if (!curr) return;
+    const updated = { ...curr, ...updates };
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updated));
+    }
+    set({ currentUser: updated });
   },
 
   cloudSyncEnabled: typeof localStorage !== 'undefined' && localStorage.getItem(SYNC_ENABLED_KEY) === 'true',
