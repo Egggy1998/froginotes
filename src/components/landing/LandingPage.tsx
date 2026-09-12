@@ -62,7 +62,7 @@ export const LandingPage: React.FC<{ onBackToApp?: () => void }> = ({ onBackToAp
       {downloadToast && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 bg-[#284E34] text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2.5 text-xs font-bold animate-bounce">
           <Check size={16} strokeWidth={3} className="text-[#89E27A]" />
-          <span>Đang tải FrogiNotes cho Windows (.exe)! Cảm ơn bạn nhé ♡</span>
+          <span>Đang tải FrogiNotes cho Windows (.zip)! Cảm ơn bạn nhé ♡</span>
         </div>
       )}
 

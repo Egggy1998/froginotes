@@ -1,0 +1,20 @@
+name = "froginotes-api"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+ENVIRONMENT = "development"
+DEV_SEED_SECRET = "local-dev-seed-secret-change-me"
+# GPM Pay — set via wrangler secret put or .dev.vars (never commit real values)
+# GPMPAY_API_TOKEN =        # wrangler secret put GPMPAY_API_TOKEN
+# GPMPAY_WEBHOOK_SECRET =   # wrangler secret put GPMPAY_WEBHOOK_SECRET
+
+[[d1_databases]]
+binding = "DB"
+database_name = "froginotes-db"
+database_id = "local-dev"
+
+[dev]
+port = 8787
+local_protocol = "http"

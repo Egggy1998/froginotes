@@ -15,6 +15,7 @@ import { useNotesStore } from '../../stores/useNotesStore';
 import { Note, DiaryEntry, NoteColor } from '../../types';
 import { FrogMascot } from '../mascots/FrogMascot';
 import { StickyCard } from '../StickyCard';
+import { localTodayStr } from '../../lib/dateHelper';
 
 const COLOR_PILLS: Record<NoteColor, string> = {
   yellow: 'bg-[#FFF5D6] text-[#634812] border-[#F2DE9C]',
@@ -39,7 +40,7 @@ export const CalendarView: React.FC = () => {
   } = useNotesStore();
 
   const today = new Date();
-  const todayStr = today.toISOString().split('T')[0];
+  const todayStr = localTodayStr();
 
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
   const [currentMonth, setCurrentMonth] = useState(today.getMonth()); // 0-11

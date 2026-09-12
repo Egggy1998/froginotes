@@ -62,14 +62,15 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
             <div className="flex flex-wrap items-center gap-3.5">
               {/* Primary Button */}
               <a
-                href={WINDOWS_DOWNLOAD_URL}
+                href={OFFICIAL_DOWNLOAD_URL}
                 onClick={onDownloadClick}
+                aria-label="Tải FrogiNotes cho Windows Setup (.exe)"
                 className="inline-flex items-center gap-2.5 px-7 py-3.5 bg-[#3D6E4A] hover:bg-[#325A3C] text-white rounded-full text-sm font-bold shadow-[0_8px_24px_rgba(61,110,74,0.30)] hover:shadow-[0_10px_28px_rgba(61,110,74,0.40)] transition-all cursor-pointer active:scale-95"
               >
-                <svg width="15" height="15" viewBox="0 0 88 88" fill="currentColor">
+                <svg width="15" height="15" viewBox="0 0 88 88" fill="currentColor" aria-hidden="true">
                   <path d="M0 12.402l35.687-4.86.016 34.423-35.67.203zm35.67 33.529l.028 34.453L.028 75.48.016 46.126zM40.97 6.425L87.95 0v41.528l-46.98.375zm47.01 45.421V88L40.97 81.428l.027-34.805z" />
                 </svg>
-                <span>Tải cho Windows →</span>
+                <span>Tải cho Windows (.exe) →</span>
               </a>
 
               {/* Secondary Button */}

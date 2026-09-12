@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useNotesStore } from '../../stores/useNotesStore';
 import { DiaryEntry, DiaryWeather, MascotMood, TapeStyle, TapePosition } from '../../types';
+import { localTodayStr } from '../../lib/dateHelper';
 import { FrogMascot } from '../mascots/FrogMascot';
 import { TapedPhotoCard } from '../TapedPhotoCard';
 
@@ -41,7 +42,7 @@ const WEATHERS: { id: DiaryWeather; labelVi: string; labelEn: string; icon: Reac
 export const DiaryView: React.FC = () => {
   const { diaryEntries, addDiaryEntry, deleteDiaryEntry, language, t } = useNotesStore();
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = localTodayStr();
   const existingToday = diaryEntries.find((e) => e.date === todayStr);
 
   // Form states for today's entry

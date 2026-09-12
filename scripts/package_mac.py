@@ -70,12 +70,19 @@ def build_mac_zip(arch, source_zip_name, out_zip_name):
         # 2. Add our app files into FrogiNotes.app/Contents/Resources/app/
         app_files = []
 
-        # package.json
-        app_files.append((os.path.join(APP_ROOT, 'package.json'), 'package.json'))
+        # package.json (strip secrets keys before bundling is out of scope;
+        # ensure .env* files are never added)
+        pkg_json_path = os.path.join(APP_ROOT, 'package.json')
+        app_files.append((pkg_json_path, 'package.json'))
+
+        # Exclude .env* files from dist/electron traversal
+        _EXCLUDE_PATTERNS = ('.env', '.env.local', '.env.production', '.env.development')
 
         # electron folder
         for root, _, files in os.walk(os.path.join(APP_ROOT, 'electron')):
             for f in files:
+                if f in _EXCLUDE_PATTERNS or f.startswith('.env'):
+                    continue
                 full_p = os.path.join(root, f)
                 rel_p = os.path.relpath(full_p, APP_ROOT)
                 app_files.append((full_p, rel_p))
@@ -83,6 +90,8 @@ def build_mac_zip(arch, source_zip_name, out_zip_name):
         # dist folder
         for root, _, files in os.walk(os.path.join(APP_ROOT, 'dist')):
             for f in files:
+                if f in _EXCLUDE_PATTERNS or f.startswith('.env'):
+                    continue
                 full_p = os.path.join(root, f)
                 rel_p = os.path.relpath(full_p, APP_ROOT)
                 app_files.append((full_p, rel_p))

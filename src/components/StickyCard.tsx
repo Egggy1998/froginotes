@@ -68,6 +68,7 @@ export const StickyCard: React.FC<StickyCardProps> = ({ note }) => {
           tapeStyle={note.tapeStyle || 'mint'}
           tapePosition={note.tapePosition || 'center'}
           mascot={note.mascot || 'happy'}
+          decorAssetId={note.decorAssetId}
           onClick={() => openEditNoteModal(note)}
         />
       </div>

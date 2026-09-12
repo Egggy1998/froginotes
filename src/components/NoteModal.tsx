@@ -11,11 +11,15 @@ import {
   Clock,
   Image as ImageIcon,
   Upload,
+  Sparkles,
 } from 'lucide-react';
 import { useNotesStore } from '../stores/useNotesStore';
 import { NoteColor, NoteType, FolderId, Note, TapeStyle, TapePosition } from '../types';
 import { FrogMascot, MascotMood } from './mascots/FrogMascot';
 import { TapedPhotoCard } from './TapedPhotoCard';
+import { DecorPackModal } from './decor/DecorPackModal';
+import { useDecorStore } from '../stores/useDecorStore';
+import type { DecorSelection } from '../lib/decor-catalog';
 
 const colorOptions: { id: NoteColor; label: string; bg: string }[] = [
   { id: 'yellow', label: 'Yellow', bg: 'bg-[#FFF5D6]' },
@@ -57,9 +61,9 @@ export const NoteModal: React.FC = () => {
     moveToTrash,
     duplicateNote,
     activeFolder,
-    _pendingNewNoteFolderId,
     t,
   } = useNotesStore();
+  const { _pendingNewNoteFolderId } = useNotesStore();
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -78,6 +82,8 @@ export const NoteModal: React.FC = () => {
   const [photoUrl, setPhotoUrl] = useState<string>('daisy');
   const [tapeStyle, setTapeStyle] = useState<TapeStyle>('mint');
   const [tapePosition, setTapePosition] = useState<TapePosition>('center');
+  const [decorAssetId, setDecorAssetId] = useState<string | null>(null);
+  const [showDecorModal, setShowDecorModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Date & Reminder state
@@ -111,6 +117,7 @@ export const NoteModal: React.FC = () => {
       setPhotoUrl(editingNote.photoUrl || 'daisy');
       setTapeStyle(editingNote.tapeStyle || 'mint');
       setTapePosition(editingNote.tapePosition || 'center');
+      setDecorAssetId(editingNote.decorAssetId ?? null);
 
       if (editingNote.checklist && editingNote.checklist.length > 0) {
         setChecklistItems(editingNote.checklist.map((item) => ({ ...item })));
@@ -151,6 +158,7 @@ export const NoteModal: React.FC = () => {
       setPhotoUrl('daisy');
       setTapeStyle('mint');
       setTapePosition('center');
+      setDecorAssetId(null);
       setFolderId(_pendingNewNoteFolderId || activeFolder || 'personal');
       setIsPinned(false);
       setIsStarred(false);
@@ -254,6 +262,7 @@ export const NoteModal: React.FC = () => {
         updates.photoUrl = photoUrl;
         updates.tapeStyle = tapeStyle;
         updates.tapePosition = tapePosition;
+        updates.decorAssetId = decorAssetId ?? undefined;
         updates.content = undefined;
         updates.checklist = undefined;
         updates.bullets = undefined;
@@ -286,6 +295,7 @@ export const NoteModal: React.FC = () => {
           photoUrl,
           tapeStyle,
           tapePosition,
+          decorAssetId: decorAssetId ?? undefined,
         });
       } else if (type === 'checklist') {
         const validItems = checklistItems.filter((i) => i.text.trim());
@@ -334,6 +344,7 @@ export const NoteModal: React.FC = () => {
   };
 
   return (
+    <>
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/35 backdrop-blur-xs select-none">
       <div
         className="w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-[#DCE8D8] overflow-hidden animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col"
@@ -574,6 +585,7 @@ export const NoteModal: React.FC = () => {
                     tapeStyle={tapeStyle}
                     tapePosition={tapePosition}
                     mascot={mascot !== 'none' ? mascot : undefined}
+                    decorAssetId={decorAssetId ?? undefined}
                   />
                 </div>
               </div>
@@ -587,25 +599,55 @@ export const NoteModal: React.FC = () => {
                   onChange={handleFileUpload}
                   className="hidden"
                 />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center gap-1.5 px-3 py-1 bg-white border border-[#D5E1D2] hover:bg-[#EEF5EB] rounded-xl text-xs font-bold text-[#284E34] transition-colors"
-                >
-                  <Upload size={13} />
-                  <span>{t.photoUpload}</span>
-                </button>
-
-                {photoUrl && photoUrl.startsWith('data:image') && (
+                <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => setPhotoUrl('daisy')}
-                    className="text-[11px] font-bold text-[#DC2626] hover:underline"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center gap-1.5 px-3 py-1 bg-white border border-[#D5E1D2] hover:bg-[#EEF5EB] rounded-xl text-xs font-bold text-[#284E34] transition-colors"
                   >
-                    {t.photoRemove}
+                    <Upload size={13} />
+                    <span>{t.photoUpload}</span>
                   </button>
-                )}
+                  {/* Decor Pack button — opens DecorPackModal scoped to this editor */}
+                  <button
+                    type="button"
+                    onClick={() => setShowDecorModal(true)}
+                    title="Trang trí băng keo"
+                    className={`flex items-center gap-1 px-3 py-1 rounded-xl text-xs font-bold border transition-colors ${
+                      decorAssetId
+                        ? 'bg-[#E2F6D8] border-[#5E9B47] text-[#284E34]'
+                        : 'bg-white border-[#D5E1D2] hover:bg-[#EEF5EB] text-[#5B7360]'
+                    }`}
+                  >
+                    <Sparkles size={13} />
+                    <span>Trang trí</span>
+                    {decorAssetId && <span className="ml-0.5 w-2 h-2 rounded-full bg-[#5E9B47] inline-block" />}
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  {decorAssetId && (
+                    <button
+                      type="button"
+                      onClick={() => setDecorAssetId(null)}
+                      className="text-[11px] font-bold text-[#6C8570] hover:text-[#DC2626] hover:underline"
+                      title="Xoá decor"
+                    >
+                      ✕ Decor
+                    </button>
+                  )}
+                  {photoUrl && photoUrl.startsWith('data:image') && (
+                    <button
+                      type="button"
+                      onClick={() => setPhotoUrl('daisy')}
+                      className="text-[11px] font-bold text-[#DC2626] hover:underline"
+                    >
+                      {t.photoRemove}
+                    </button>
+                  )}
+                </div>
               </div>
+
 
               {/* Presets */}
               <div>
@@ -898,5 +940,16 @@ export const NoteModal: React.FC = () => {
         </form>
       </div>
     </div>
+
+    {/* DecorPackModal — scoped to this editor; selection updates local decorAssetId only */}
+    <DecorPackModal
+      open={showDecorModal}
+      onClose={() => setShowDecorModal(false)}
+      onApply={(selection: DecorSelection) => {
+        setDecorAssetId(selection.assetId);
+      }}
+      currentAssetId={decorAssetId}
+    />
+    </>
   );
 };

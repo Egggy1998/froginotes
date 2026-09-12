@@ -1,22 +1,14 @@
 import { create } from 'zustand';
 import { Note, NavSection, FolderId, DiaryEntry, UserProfile } from '../types';
-import {
-  initDatabase,
-  fetchNotesFromDB,
-  insertNoteToDB,
-  updateNoteInDB,
-  deleteNoteFromDB,
-  fetchDiaryEntriesFromDB,
-  insertDiaryEntryToDB,
-  deleteDiaryEntryFromDB,
-} from '../lib/db';
+// db imports removed — cloud sync is permanently disabled (no tenant isolation,
+// credentials were bundled in client JS). All storage is local-only.
 import { Language, translations } from '../lib/i18n';
 
 export const INITIAL_DIARY_ENTRIES: DiaryEntry[] = [
   {
     id: 'diary-1',
     date: '2026-09-09',
-    mood: 'chill',
+    mood: 'sleepy',
     weather: 'cozy',
     title: 'Góc làm việc nhỏ & ly trà thơm ☕',
     content: 'Hôm nay trời mưa mát mẻ. Ngồi nhâm nhi tách trà ấm và hoàn thành xong các kế hoạch trong ngày. Cảm thấy lòng thật nhẹ nhõm, bình yên và biết ơn vì những điều giản dị quanh mình. ♡',
@@ -268,6 +260,9 @@ interface NotesState {
   toggleStar: (id: string) => void;
   togglePin: (id: string) => void;
   resetToDefault: () => void;
+
+  // Pending folder for new note (set by CalendarView or folder context)
+  _pendingNewNoteFolderId: FolderId | null;
 }
 
 const STORAGE_KEY = 'froginotes_data_v7_empty';
@@ -349,6 +344,7 @@ export const useNotesStore = create<NotesState>((set, get) => ({
   editingNote: null,
   environmentMode: true,
   isLandingView: getInitialLandingView(),
+  _pendingNewNoteFolderId: null,
   setIsLandingView: (val: boolean) => set({ isLandingView: val }),
 
   language: getInitialLanguage(),
@@ -400,8 +396,11 @@ export const useNotesStore = create<NotesState>((set, get) => ({
     set({ currentUser: updated });
   },
 
-  cloudSyncEnabled: typeof localStorage !== 'undefined' && localStorage.getItem(SYNC_ENABLED_KEY) === 'true',
-  syncKey: typeof localStorage !== 'undefined' ? localStorage.getItem(SYNC_KEY_STORAGE) || '' : '',
+  // Cloud sync is permanently disabled — shared DB had no tenant isolation and
+  // credentials were bundled client-side. Force false regardless of any stale
+  // localStorage value so existing persisted 'true' cannot re-enable DB access.
+  cloudSyncEnabled: false,
+  syncKey: '',
   showSyncModal: false,
   isDbConnected: false,
   isSyncing: false,
@@ -418,18 +417,15 @@ export const useNotesStore = create<NotesState>((set, get) => ({
   },
 
   emptyTrash: () => {
+    // Capture trashIds BEFORE filtering so we still have them for DB deletion
+    const trashIds = get().notes.filter((n) => n.isTrash).map((n) => n.id);
     const updated = get().notes.filter((n) => !n.isTrash);
     set({ notes: updated });
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     }
-    // Delete in DB
-    const trashIds = get().notes.filter((n) => n.isTrash).map((n) => n.id);
-    if (get().cloudSyncEnabled) {
-      for (const id of trashIds) {
-        deleteNoteFromDB(id).catch(console.error);
-      }
-    }
+    // Delete from DB only if cloud sync is enabled
+    // Cloud sync disabled — no remote deletes
   },
 
   archiveNote: (id) => {
@@ -447,41 +443,22 @@ export const useNotesStore = create<NotesState>((set, get) => ({
   setCollapsed: (collapsed) => set({ isCollapsed: collapsed }),
   setViewMode: (mode) => set({ viewMode: mode }),
   setFloatingPos: (pos) => set({ floatingPos: pos }),
-  openNewNoteModal: (folderId) =>
-    set({ showNoteModal: true, editingNote: null }),
+  openNewNoteModal: (folderId?: FolderId) =>
+    set({ showNoteModal: true, editingNote: null, _pendingNewNoteFolderId: folderId ?? null }),
   openEditNoteModal: (note) =>
     set({ showNoteModal: true, editingNote: note }),
   closeNoteModal: () =>
-    set({ showNoteModal: false, editingNote: null }),
+    set({ showNoteModal: false, editingNote: null, _pendingNewNoteFolderId: null }),
   setEnvironmentMode: (env) => set({ environmentMode: env }),
 
   setShowSyncModal: (show) => set({ showSyncModal: show }),
 
-  activateCloudSync: async (key: string) => {
-    if (!key.trim()) return false;
-    const cleanKey = key.trim();
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(SYNC_ENABLED_KEY, 'true');
-      localStorage.setItem(SYNC_KEY_STORAGE, cleanKey);
-    }
-    set({ cloudSyncEnabled: true, syncKey: cleanKey, isDbConnected: true, isSyncing: true, showSyncModal: false });
-
-    // Sync all current notes & diary entries to Turso
-    try {
-      const state = get();
-      for (const n of state.notes) {
-        await insertNoteToDB(n);
-      }
-      for (const d of state.diaryEntries) {
-        await insertDiaryEntryToDB(d);
-      }
-      await state.syncFromDB();
-      return true;
-    } catch (e) {
-      console.error('Failed to sync to Turso on activation:', e);
-      set({ isSyncing: false });
-      return false;
-    }
+  activateCloudSync: async (_key: string) => {
+    // Cloud sync is permanently disabled. The shared Turso DB had no tenant
+    // isolation and the auth token was bundled in the JS bundle. No key is
+    // accepted — this always fails closed.
+    console.warn('[store] Cloud sync activation rejected: feature disabled for security.');
+    return false;
   },
 
   disableCloudSync: () => {
@@ -493,80 +470,9 @@ export const useNotesStore = create<NotesState>((set, get) => ({
   },
 
   syncFromDB: async () => {
-    const { cloudSyncEnabled } = get();
-    if (!cloudSyncEnabled) return;
-
-    set({ isSyncing: true });
-
-    try {
-      await initDatabase(INITIAL_NOTES_VI);
-      const [remoteNotes, remoteDiary] = await Promise.all([
-        fetchNotesFromDB(),
-        fetchDiaryEntriesFromDB(),
-      ]);
-
-      const localNotes = get().notes;
-      const localDiary = get().diaryEntries;
-
-      // 1. Bidirectional Merge for Notes
-      const mergedNotesMap = new Map<string, Note>();
-      for (const rn of remoteNotes) {
-        mergedNotesMap.set(rn.id, rn);
-      }
-      for (const ln of localNotes) {
-        const rn = mergedNotesMap.get(ln.id);
-        if (!rn) {
-          mergedNotesMap.set(ln.id, ln);
-          insertNoteToDB(ln).catch(console.error);
-        } else {
-          const localTime = new Date(ln.updatedAt || 0).getTime();
-          const remoteTime = new Date(rn.updatedAt || 0).getTime();
-          if (localTime > remoteTime) {
-            mergedNotesMap.set(ln.id, ln);
-            insertNoteToDB(ln).catch(console.error);
-          }
-        }
-      }
-      const finalNotes = Array.from(mergedNotesMap.values());
-
-      // 2. Bidirectional Merge for Diary Entries
-      const mergedDiaryMap = new Map<string, DiaryEntry>();
-      for (const rd of remoteDiary) {
-        mergedDiaryMap.set(rd.date, rd);
-      }
-      for (const ld of localDiary) {
-        const rd = mergedDiaryMap.get(ld.date);
-        if (!rd) {
-          mergedDiaryMap.set(ld.date, ld);
-          insertDiaryEntryToDB(ld).catch(console.error);
-        } else {
-          const localTime = new Date(ld.updatedAt || 0).getTime();
-          const remoteTime = new Date(rd.updatedAt || 0).getTime();
-          if (localTime > remoteTime) {
-            mergedDiaryMap.set(ld.date, ld);
-            insertDiaryEntryToDB(ld).catch(console.error);
-          }
-        }
-      }
-      const finalDiary = Array.from(mergedDiaryMap.values()).sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-      );
-
-      set({
-        notes: finalNotes,
-        diaryEntries: finalDiary,
-        isDbConnected: true,
-        isSyncing: false,
-      });
-
-      if (typeof localStorage !== 'undefined') {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(finalNotes));
-        localStorage.setItem(DIARY_STORAGE_KEY, JSON.stringify(finalDiary));
-      }
-    } catch (e) {
-      console.warn('Could not sync with Turso DB, working offline:', e);
-      set({ isDbConnected: false, isSyncing: false });
-    }
+    // Cloud sync is permanently disabled — always a no-op.
+    console.warn('[store] syncFromDB called but cloud sync is disabled.');
+    set({ isDbConnected: false, isSyncing: false });
   },
 
   addNote: (newNoteData) => {
@@ -586,10 +492,7 @@ export const useNotesStore = create<NotesState>((set, get) => ({
       }
       return { notes: updated, showNoteModal: false, editingNote: null };
     });
-
-    if (get().cloudSyncEnabled) {
-      insertNoteToDB(newNote).catch(console.error);
-    }
+    // Cloud sync disabled — no remote write
   },
 
   updateNote: (id, updates) => {
@@ -602,10 +505,7 @@ export const useNotesStore = create<NotesState>((set, get) => ({
       }
       return { notes: updated, showNoteModal: false, editingNote: null };
     });
-
-    if (get().cloudSyncEnabled) {
-      updateNoteInDB(id, updates).catch(console.error);
-    }
+    // Cloud sync disabled — no remote write
   },
 
   deleteNote: (id) => {
@@ -616,10 +516,7 @@ export const useNotesStore = create<NotesState>((set, get) => ({
       }
       return { notes: updated, showNoteModal: false, editingNote: null };
     });
-
-    if (get().cloudSyncEnabled) {
-      deleteNoteFromDB(id).catch(console.error);
-    }
+    // Cloud sync disabled — no remote write
   },
 
   duplicateNote: (id) => {
@@ -642,14 +539,10 @@ export const useNotesStore = create<NotesState>((set, get) => ({
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     }
-
-    if (get().cloudSyncEnabled) {
-      insertNoteToDB(dup).catch(console.error);
-    }
+    // Cloud sync disabled — no remote write (duplicateNote)
   },
 
   toggleChecklistItem: (noteId, itemId) => {
-    let updatedChecklist: ChecklistItem[] | undefined = undefined;
     const updated = get().notes.map((note) => {
       if (note.id !== noteId || !note.checklist) return note;
       const newChecklist = note.checklist.map((item, idx) =>
@@ -657,17 +550,16 @@ export const useNotesStore = create<NotesState>((set, get) => ({
           ? { ...item, completed: !item.completed }
           : item
       );
-      updatedChecklist = newChecklist;
-      // Do not update updatedAt here so the card stays stably in its position on the board
+      // NOTE: Do NOT update updatedAt here — that would change the sort order
+      // and cause the card to jump position in the grid. Checklist toggles are
+      // lightweight in-place edits, not full note edits.
       return { ...note, checklist: newChecklist };
     });
     set({ notes: updated });
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     }
-    if (updatedChecklist && get().cloudSyncEnabled) {
-      updateNoteInDB(noteId, { checklist: updatedChecklist }).catch(console.error);
-    }
+    // Cloud sync disabled — no remote write
   },
 
   toggleStar: (id) => {
@@ -684,9 +576,7 @@ export const useNotesStore = create<NotesState>((set, get) => ({
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     }
-    if (get().cloudSyncEnabled) {
-      updateNoteInDB(id, { isStarred, updatedAt: now }).catch(console.error);
-    }
+    // Cloud sync disabled — no remote write (toggleStar)
   },
 
   togglePin: (id) => {
@@ -703,9 +593,7 @@ export const useNotesStore = create<NotesState>((set, get) => ({
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     }
-    if (get().cloudSyncEnabled) {
-      updateNoteInDB(id, { isPinned, updatedAt: now }).catch(console.error);
-    }
+    // Cloud sync disabled — no remote write (togglePin)
   },
 
   // Diary Actions
@@ -729,10 +617,7 @@ export const useNotesStore = create<NotesState>((set, get) => ({
       }
       return { diaryEntries: updated };
     });
-
-    if (get().cloudSyncEnabled) {
-      insertDiaryEntryToDB(newEntry).catch(console.error);
-    }
+    // Cloud sync disabled — no remote write (addDiaryEntry)
   },
 
   updateDiaryEntry: (id, updates) => {
@@ -750,10 +635,7 @@ export const useNotesStore = create<NotesState>((set, get) => ({
       }
       return { diaryEntries: updated };
     });
-
-    if (get().cloudSyncEnabled && targetEntry) {
-      insertDiaryEntryToDB(targetEntry).catch(console.error);
-    }
+    // Cloud sync disabled — no remote write (updateDiaryEntry)
   },
 
   deleteDiaryEntry: (id) => {
@@ -764,10 +646,7 @@ export const useNotesStore = create<NotesState>((set, get) => ({
       }
       return { diaryEntries: updated };
     });
-
-    if (get().cloudSyncEnabled) {
-      deleteDiaryEntryFromDB(id).catch(console.error);
-    }
+    // Cloud sync disabled — no remote write (deleteDiaryEntry)
   },
 
   resetToDefault: () => {
@@ -775,8 +654,6 @@ export const useNotesStore = create<NotesState>((set, get) => ({
       localStorage.removeItem(STORAGE_KEY);
     }
     set({ notes: INITIAL_NOTES_VI });
-    if (get().cloudSyncEnabled) {
-      initDatabase(INITIAL_NOTES_VI).catch(console.error);
-    }
+    // Cloud sync disabled — no remote write
   },
 }));

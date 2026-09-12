@@ -55,10 +55,10 @@ function createBubbleWindow() {
   const preloadPath = path.join(__dirname, 'preload.cjs');
 
   bubbleWindow = new BrowserWindow({
-    width: 90,
-    height: 90,
-    x: width - 120,
-    y: height - 140,
+    width: 150,
+    height: 150,
+    x: width - 180,
+    y: height - 200,
     frame: false,
     transparent: true,
     alwaysOnTop: true,
@@ -120,12 +120,13 @@ app.whenReady().then(() => {
 
   ipcMain.on('bubble-move', (event, { deltaX, deltaY }) => {
     if (bubbleWindow && !bubbleWindow.isDestroyed()) {
-      if (typeof deltaX !== 'number' || typeof deltaY !== 'number') return;
+      if (!Number.isFinite(deltaX) || !Number.isFinite(deltaY)) return;
       const [currX, currY] = bubbleWindow.getPosition();
       const display = screen.getDisplayNearestPoint({ x: currX, y: currY });
       const { x: sx, y: sy, width: sw, height: sh } = display.workArea;
-      const nextX = Math.max(sx, Math.min(sx + sw - 85, currX + deltaX));
-      const nextY = Math.max(sy, Math.min(sy + sh - 85, currY + deltaY));
+      const [bw, bh] = bubbleWindow.getSize();
+      const nextX = Math.max(sx, Math.min(sx + sw - bw, currX + deltaX));
+      const nextY = Math.max(sy, Math.min(sy + sh - bh, currY + deltaY));
       bubbleWindow.setPosition(Math.round(nextX), Math.round(nextY));
     }
   });

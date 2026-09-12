@@ -10,8 +10,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "electron:start": "electron electron/main.cjs",
-    "pack:win": "electron-packager . FrogiNotes --platform=win32 --arch=x64 --out=release-builds --overwrite --prune=true --icon=icon.ico --ignore=\"^(src|scripts|release-builds|\\.git|.*\\.zip|screenshot_.*|node_modules/@types|node_modules/typescript)\"",
-    "pack:mac": "electron-builder build --mac zip --arm64 --x64"
+    "pack:win": "electron-packager . FrogiNotes --platform=win32 --arch=x64 --out=release-builds --overwrite --prune=true --icon=icon.ico --ignore=\"^(src|scripts|release-builds|\\.git|.*\\.zip|screenshot_.*|\\.env.*|node_modules/@types|node_modules/typescript)\"",
+    "pack:mac": "electron-builder build --mac zip --arm64 --x64",
+    "setup:win": "bun run build && electron-builder --win nsis --x64 --config.directories.output=release-builds/installer"
   },
   "build": {
     "appId": "com.froginotes.app",
@@ -23,8 +24,27 @@
       "dist/**/*",
       "electron/**/*",
       "package.json",
-      "public/**/*"
+      "icon.ico",
+      "public/**/*",
+      "!**/.env*",
+      "!**/*.local"
     ],
+    "win": {
+      "target": "nsis",
+      "icon": "icon.ico",
+      "artifactName": "FrogiNotes-Setup-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "FrogiNotes",
+      "deleteAppDataOnUninstall": false,
+      "runAfterFinish": false
+    },
     "mac": {
       "target": [
         {
@@ -47,6 +67,7 @@
   "devDependencies": {
     "@electron/packager": "^20.3.0",
     "@tailwindcss/vite": "^4.0.0",
+    "@types/bun": "^1.4.2",
     "@types/canvas-confetti": "^1.9.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

@@ -66,7 +66,7 @@ export const LandingFooter: React.FC = () => {
 
         {/* Right: Copyright */}
         <div className="text-xs text-[#6B7280] font-normal">
-          © 2024 FrogiNotes. All rights reserved.
+          © {new Date().getFullYear()} FrogiNotes. All rights reserved.
         </div>
       </div>
     </footer>

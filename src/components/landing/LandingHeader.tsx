@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { User, Sparkles, ChevronDown } from 'lucide-react';
 import { FrogMascot } from '../mascots/FrogMascot';
 import { useNotesStore } from '../../stores/useNotesStore';
+import { useAuthStore } from '../../stores/useAuthStore';
 import {
   OFFICIAL_DOWNLOAD_URL,
+  WINDOWS_SETUP_URL,
   WINDOWS_DOWNLOAD_URL,
   MAC_ARM64_DOWNLOAD_URL,
   MAC_X64_DOWNLOAD_URL,
@@ -19,7 +21,12 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
   onDemoClick,
 }) => {
   const { currentUser, setShowAuthModal, setShowAccountModal } = useNotesStore();
+  const { user: cloudUser, phase } = useAuthStore();
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
+
+  const isCloudAuth = phase === 'authenticated' && cloudUser !== null;
+  const activeUser = isCloudAuth ? cloudUser : currentUser;
+  const isPro = (isCloudAuth && cloudUser?.plan === 'pro') || (!isCloudAuth && currentUser?.plan === 'pro');
 
   const scrollToSection = (id: string) => {
     const el = document.getElementById(id);
@@ -89,18 +96,24 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
 
         {/* Right: Auth / Account + Download CTA Button */}
         <div className="flex items-center gap-2.5">
-          {currentUser ? (
+          {activeUser ? (
             <button
               type="button"
               onClick={() => setShowAccountModal(true)}
               className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#EBF5E5] hover:bg-[#DDEED5] border border-[#C8E2BF] text-xs font-bold text-[#284E34] transition-all cursor-pointer shadow-2xs"
               title="Quản lý tài khoản"
             >
-              <FrogMascot mood="love" size={22} />
-              <span className="max-w-[100px] truncate">{currentUser.name}</span>
-              <span className="px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-[#3D6E4A] text-white">
-                PRO
-              </span>
+              <FrogMascot mood={isPro ? "crown" : "happy"} size={22} />
+              <span className="max-w-[100px] truncate">{activeUser.name || activeUser.email?.split('@')[0]}</span>
+              {isPro ? (
+                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-[#3D6E4A] text-white">
+                  PRO 👑
+                </span>
+              ) : (
+                <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-[#DDE9D9] text-[#4F6A54]">
+                  FREE
+                </span>
+              )}
             </button>
           ) : (
             <button
@@ -140,7 +153,28 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
                     Chọn phiên bản
                   </div>
 
-                  {/* Windows Option */}
+                  {/* Windows Installer Option */}
+                  <a
+                    href={WINDOWS_SETUP_URL}
+                    onClick={() => {
+                      setShowDownloadMenu(false);
+                      onDownloadClick?.();
+                    }}
+                    className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-[#F2F7EF] transition-colors group/item"
+                  >
+                    <div className="w-7 h-7 rounded-lg bg-[#EAF5E3] text-[#284E34] flex items-center justify-center font-bold">
+                      ⚡
+                    </div>
+                    <div>
+                      <span className="block text-xs font-bold text-[#284E34] group-hover/item:text-[#1E3A27] flex items-center gap-1">
+                        Windows Setup (.exe)
+                        <span className="px-1.5 py-0.2 rounded-full text-[9px] font-extrabold bg-[#3D6E4A] text-white">Khuyên dùng</span>
+                      </span>
+                      <span className="text-[10px] text-[#7A9380]">Bộ cài tự động Windows 10 / 11</span>
+                    </div>
+                  </a>
+
+                  {/* Windows Portable Option */}
                   <a
                     href={WINDOWS_DOWNLOAD_URL}
                     onClick={() => {
@@ -154,9 +188,9 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
                     </div>
                     <div>
                       <span className="block text-xs font-bold text-[#284E34] group-hover/item:text-[#1E3A27]">
-                        Windows x64 (.zip)
+                        Windows Portable (.zip)
                       </span>
-                      <span className="text-[10px] text-[#7A9380]">Windows 10 / 11 (64-bit)</span>
+                      <span className="text-[10px] text-[#7A9380]">Bản giải nén dùng ngay</span>
                     </div>
                   </a>
 

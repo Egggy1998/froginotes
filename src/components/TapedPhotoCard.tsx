@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { TapeStyle, TapePosition } from '../types';
 import { FrogMascot, MascotMood } from './mascots/FrogMascot';
+import { getDecorAssetById, getApplyStyles } from '../lib/decor-catalog';
 
 interface TapedPhotoCardProps {
   title?: string;
@@ -9,6 +10,8 @@ interface TapedPhotoCardProps {
   tapePosition?: TapePosition;
   mascot?: MascotMood;
   onClick?: () => void;
+  /** Optional decor asset ID — when set, overrides tapeStyle CSS class with inline CSS */
+  decorAssetId?: string;
 }
 
 // Preset photo illustrations & gradients if no custom photo uploaded
@@ -26,6 +29,7 @@ export const TapedPhotoCard: React.FC<TapedPhotoCardProps> = ({
   tapePosition = 'center',
   mascot = 'happy',
   onClick,
+  decorAssetId,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
@@ -67,7 +71,23 @@ export const TapedPhotoCard: React.FC<TapedPhotoCardProps> = ({
 
   // Tape position rendering
   const renderTape = () => {
-    const tapeClass = getTapeClass();
+    // If a decor asset is active, use its inline styles instead of Tailwind classes
+    const decorAsset = decorAssetId ? getDecorAssetById(decorAssetId) : undefined;
+    const decorStyles = decorAsset ? getApplyStyles(decorAsset) : undefined;
+
+    const tapeClass = decorStyles ? '' : getTapeClass();
+
+    // Build inline style override when decor asset is applied
+    const tapeInlineStyle: React.CSSProperties | undefined = decorStyles
+      ? {
+          background: decorStyles.background,
+          borderTop: decorStyles.borderTop,
+          borderBottom: decorStyles.borderBottom,
+          boxShadow: decorStyles.boxShadow,
+          backgroundImage: decorStyles.backgroundImage,
+          backgroundSize: decorStyles.backgroundSize,
+        }
+      : undefined;
 
     if (tapePosition === 'corners') {
       return (
@@ -77,12 +97,14 @@ export const TapedPhotoCard: React.FC<TapedPhotoCardProps> = ({
             className={`absolute -top-1 -left-2 w-11 h-4 ${tapeClass} rotate-[-35deg] z-20 pointer-events-none transition-transform duration-300 ${
               isHovered ? 'scale-105 -translate-y-0.5' : ''
             }`}
+            style={tapeInlineStyle}
           />
           {/* Top-right corner tape */}
           <div
             className={`absolute -top-1 -right-2 w-11 h-4 ${tapeClass} rotate-[35deg] z-20 pointer-events-none transition-transform duration-300 ${
               isHovered ? 'scale-105 -translate-y-0.5' : ''
             }`}
+            style={tapeInlineStyle}
           />
         </>
       );
@@ -94,6 +116,7 @@ export const TapedPhotoCard: React.FC<TapedPhotoCardProps> = ({
           className={`absolute -top-1.5 left-6 w-16 h-5 ${tapeClass} rotate-[-6deg] z-20 pointer-events-none transition-transform duration-300 ${
             isHovered ? 'scale-110 -translate-y-1' : ''
           }`}
+          style={tapeInlineStyle}
         />
       );
     }
@@ -104,6 +127,7 @@ export const TapedPhotoCard: React.FC<TapedPhotoCardProps> = ({
         className={`absolute -top-1.5 left-1/2 -translate-x-1/2 w-16 h-5 ${tapeClass} rotate-[-1.5deg] z-20 pointer-events-none transition-transform duration-300 ${
           isHovered ? 'scale-110 -translate-y-1' : ''
         }`}
+        style={tapeInlineStyle}
       />
     );
   };
@@ -234,7 +258,7 @@ export const TapedPhotoCard: React.FC<TapedPhotoCardProps> = ({
         </div>
 
         {/* Corner Mascot Stamp (Motion bouncy on hover) */}
-        {mascot && mascot !== 'none' && (
+        {mascot && (
           <div
             className={`absolute bottom-2 right-2.5 z-20 transition-transform duration-300 pointer-events-none ${
               isHovered ? 'scale-115 rotate-6' : 'scale-100'

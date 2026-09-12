@@ -167,7 +167,7 @@ export const FloatingFrogWidget: React.FC = () => {
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
-          className="relative flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
+          className="relative flex items-center justify-center cursor-pointer active:scale-95 transition-transform outline-none"
         >
           {/* Yellow Radiance Accent Marks Top-Right */}
           <div className="absolute -top-3.5 -right-3.5 w-8 h-8 pointer-events-none">

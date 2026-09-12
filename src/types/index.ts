@@ -58,6 +58,8 @@ export interface Note {
   photoUrl?: string;
   tapeStyle?: TapeStyle;
   tapePosition?: TapePosition;
+  /** Decor pack asset ID applied to the tape (optional; overrides tapeStyle CSS class when set) */
+  decorAssetId?: string;
   folderId: string;
   isPinned?: boolean;
   isStarred?: boolean;
