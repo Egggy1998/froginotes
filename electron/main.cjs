@@ -121,12 +121,26 @@ app.whenReady().then(() => {
   ipcMain.on('bubble-move', (event, { deltaX, deltaY }) => {
     if (bubbleWindow && !bubbleWindow.isDestroyed()) {
       if (!Number.isFinite(deltaX) || !Number.isFinite(deltaY)) return;
+      if (deltaX === 0 && deltaY === 0) return;
       const [currX, currY] = bubbleWindow.getPosition();
-      const display = screen.getDisplayNearestPoint({ x: currX, y: currY });
-      const { x: sx, y: sy, width: sw, height: sh } = display.workArea;
       const [bw, bh] = bubbleWindow.getSize();
-      const nextX = Math.max(sx, Math.min(sx + sw - bw, currX + deltaX));
-      const nextY = Math.max(sy, Math.min(sy + sh - bh, currY + deltaY));
+
+      // Support multi-monitor and full virtual desktop area
+      const displays = screen.getAllDisplays();
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      for (const d of displays) {
+        const b = d.bounds;
+        if (b.x < minX) minX = b.x;
+        if (b.y < minY) minY = b.y;
+        if (b.x + b.width > maxX) maxX = b.x + b.width;
+        if (b.y + b.height > maxY) maxY = b.y + b.height;
+      }
+
+      // The 62px circular frog is centered inside the 150px transparent window (44px transparent padding).
+      // Allow padding offset so the visible frog can reach the exact screen edges.
+      const pad = 44;
+      const nextX = Math.max(minX - pad, Math.min(maxX - bw + pad, currX + deltaX));
+      const nextY = Math.max(minY - pad, Math.min(maxY - bh + pad, currY + deltaY));
       bubbleWindow.setPosition(Math.round(nextX), Math.round(nextY));
     }
   });

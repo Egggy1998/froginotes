@@ -50,6 +50,7 @@ export const App: React.FC = () => {
       setEnvironmentMode(false);
     } else if (params.get('view') === 'app') {
       setIsLandingView(false);
+      setEnvironmentMode(false);
     } else if (params.get('collapsed') === 'true') {
       setCollapsed(true);
       setEnvironmentMode(false);

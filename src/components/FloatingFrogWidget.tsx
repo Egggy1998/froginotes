@@ -42,57 +42,63 @@ export const FloatingFrogWidget: React.FC = () => {
       screenY: e.screenY,
     };
 
-    // Capture pointer
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
-  };
-
-  // Pointer Move
-  const handlePointerMove = (e: React.PointerEvent) => {
-    if (!isPointerDownRef.current) return;
-
-    const totalDistX = Math.abs(e.screenX - startPosRef.current.screenX);
-    const totalDistY = Math.abs(e.screenY - startPosRef.current.screenY);
-
-    // If moved more than 6px, treat as drag
-    if (totalDistX > 6 || totalDistY > 6) {
-      hasMovedRef.current = true;
-    }
-
-    const deltaX = e.screenX - lastPosRef.current.screenX;
-    const deltaY = e.screenY - lastPosRef.current.screenY;
-    lastPosRef.current = { screenX: e.screenX, screenY: e.screenY };
-
-    if (hasMovedRef.current) {
-      if (isElectron && (window as any).electronAPI?.moveBubble) {
-        // Move native Electron bubble window
-        (window as any).electronAPI.moveBubble(deltaX, deltaY);
-      } else if (!isElectron) {
-        // Move inside browser showcase canvas
-        setFloatingPos({
-          x: Math.max(10, Math.min(window.innerWidth - 75, floatingPos.x + deltaX)),
-          y: Math.max(10, Math.min(window.innerHeight - 75, floatingPos.y + deltaY)),
-        });
-      }
-    }
-  };
-
-  // Pointer Up (Release)
-  const handlePointerUp = (e: React.PointerEvent) => {
-    if (!isPointerDownRef.current) return;
-    isPointerDownRef.current = false;
-
+    const target = e.currentTarget as HTMLElement;
     try {
-      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
-    } catch {
-      // Ignore if already released
-    }
+      target.setPointerCapture(e.pointerId);
+    } catch {}
 
-    // If did NOT drag (or moved <= 3px), it is a CLICK -> EXPAND!
-    if (!hasMovedRef.current) {
-      e.stopPropagation();
-      e.preventDefault();
-      expandApp();
-    }
+    const handlePointerMove = (ev: PointerEvent) => {
+      if (!isPointerDownRef.current) return;
+
+      const totalDistX = Math.abs(ev.screenX - startPosRef.current.screenX);
+      const totalDistY = Math.abs(ev.screenY - startPosRef.current.screenY);
+
+      // If moved more than 4px, treat as drag
+      if (totalDistX > 4 || totalDistY > 4) {
+        hasMovedRef.current = true;
+      }
+
+      const deltaX = ev.screenX - lastPosRef.current.screenX;
+      const deltaY = ev.screenY - lastPosRef.current.screenY;
+      lastPosRef.current = { screenX: ev.screenX, screenY: ev.screenY };
+
+      if (hasMovedRef.current) {
+        if (isElectron && (window as any).electronAPI?.moveBubble) {
+          // Move native Electron bubble window
+          (window as any).electronAPI.moveBubble(deltaX, deltaY);
+        } else if (!isElectron) {
+          // Move inside browser showcase canvas using functional updater
+          setFloatingPos(prev => ({
+            x: Math.max(0, Math.min(window.innerWidth - 62, prev.x + deltaX)),
+            y: Math.max(0, Math.min(window.innerHeight - 62, prev.y + deltaY)),
+          }));
+        }
+      }
+    };
+
+    const handlePointerUp = (ev: PointerEvent) => {
+      if (!isPointerDownRef.current) return;
+      isPointerDownRef.current = false;
+
+      try {
+        target.releasePointerCapture(ev.pointerId);
+      } catch {}
+
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
+
+      // If did NOT drag (or moved <= 4px), it is a CLICK -> EXPAND!
+      if (!hasMovedRef.current) {
+        ev.stopPropagation();
+        ev.preventDefault();
+        expandApp();
+      }
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('pointercancel', handlePointerUp);
   };
 
   // Expand FrogiNotes
@@ -164,9 +170,6 @@ export const FloatingFrogWidget: React.FC = () => {
       >
         <div
           onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerUp}
           className="relative flex items-center justify-center cursor-pointer active:scale-95 transition-transform outline-none"
         >
           {/* Yellow Radiance Accent Marks Top-Right */}

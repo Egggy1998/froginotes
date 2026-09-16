@@ -212,7 +212,7 @@ interface NotesState {
   toggleCollapse: () => void;
   setCollapsed: (collapsed: boolean) => void;
   setViewMode: (mode: 'grid' | 'list' | 'calendar') => void;
-  setFloatingPos: (pos: { x: number; y: number }) => void;
+  setFloatingPos: (pos: { x: number; y: number } | ((prev: { x: number; y: number }) => { x: number; y: number })) => void;
   openNewNoteModal: (folderId?: FolderId) => void;
   openEditNoteModal: (note: Note) => void;
   closeNoteModal: () => void;
@@ -442,7 +442,8 @@ export const useNotesStore = create<NotesState>((set, get) => ({
   toggleCollapse: () => set((state) => ({ isCollapsed: !state.isCollapsed })),
   setCollapsed: (collapsed) => set({ isCollapsed: collapsed }),
   setViewMode: (mode) => set({ viewMode: mode }),
-  setFloatingPos: (pos) => set({ floatingPos: pos }),
+  setFloatingPos: (pos) =>
+    set((state) => ({ floatingPos: typeof pos === 'function' ? pos(state.floatingPos) : pos })),
   openNewNoteModal: (folderId?: FolderId) =>
     set({ showNoteModal: true, editingNote: null, _pendingNewNoteFolderId: folderId ?? null }),
   openEditNoteModal: (note) =>
