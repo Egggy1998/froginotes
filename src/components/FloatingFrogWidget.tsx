@@ -42,58 +42,61 @@ export const FloatingFrogWidget: React.FC = () => {
       screenY: e.screenY,
     };
 
-    const handlePointerMove = (ev: PointerEvent) => {
-      if (!isPointerDownRef.current) return;
+    // Capture pointer so dragging is tracked across entire screen even when mouse leaves bubble
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {}
+  };
 
-      const totalDistX = Math.abs(ev.screenX - startPosRef.current.screenX);
-      const totalDistY = Math.abs(ev.screenY - startPosRef.current.screenY);
+  // Pointer Move
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isPointerDownRef.current) return;
 
-      // If moved more than 8px, treat as genuine drag
-      if (totalDistX > 8 || totalDistY > 8) {
-        hasMovedRef.current = true;
+    const totalDistX = Math.abs(e.screenX - startPosRef.current.screenX);
+    const totalDistY = Math.abs(e.screenY - startPosRef.current.screenY);
+
+    // If moved more than 8px, treat as genuine drag
+    if (totalDistX > 8 || totalDistY > 8) {
+      hasMovedRef.current = true;
+    }
+
+    const deltaX = e.screenX - lastPosRef.current.screenX;
+    const deltaY = e.screenY - lastPosRef.current.screenY;
+    lastPosRef.current = { screenX: e.screenX, screenY: e.screenY };
+
+    if (hasMovedRef.current && (deltaX !== 0 || deltaY !== 0)) {
+      if (isElectron && (window as any).electronAPI?.moveBubble) {
+        // Move native Electron bubble window
+        (window as any).electronAPI.moveBubble(deltaX, deltaY);
+      } else if (!isElectron) {
+        // Move inside browser showcase canvas
+        setFloatingPos(prev => {
+          const curX = prev.x === 0 ? (typeof window !== 'undefined' ? window.innerWidth - 88 : 1200) : prev.x;
+          const curY = prev.y === 0 ? (typeof window !== 'undefined' ? window.innerHeight - 88 : 700) : prev.y;
+          return {
+            x: Math.max(10, Math.min((typeof window !== 'undefined' ? window.innerWidth : 1200) - 75, curX + deltaX)),
+            y: Math.max(10, Math.min((typeof window !== 'undefined' ? window.innerHeight : 800) - 75, curY + deltaY)),
+          };
+        });
       }
+    }
+  };
 
-      const deltaX = ev.screenX - lastPosRef.current.screenX;
-      const deltaY = ev.screenY - lastPosRef.current.screenY;
-      lastPosRef.current = { screenX: ev.screenX, screenY: ev.screenY };
+  // Pointer Up (Release)
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (!isPointerDownRef.current) return;
+    isPointerDownRef.current = false;
 
-      if (hasMovedRef.current) {
-        if (isElectron && (window as any).electronAPI?.moveBubble) {
-          // Move native Electron bubble window
-          (window as any).electronAPI.moveBubble(deltaX, deltaY);
-        } else if (!isElectron) {
-          // Move inside browser showcase canvas using functional updater
-          setFloatingPos(prev => {
-            const curX = prev.x === 0 ? window.innerWidth - 88 : prev.x;
-            const curY = prev.y === 0 ? window.innerHeight - 88 : prev.y;
-            return {
-              x: Math.max(10, Math.min(window.innerWidth - 75, curX + deltaX)),
-              y: Math.max(10, Math.min(window.innerHeight - 75, curY + deltaY)),
-            };
-          });
-        }
-      }
-    };
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {}
 
-    const handlePointerUp = (ev: PointerEvent) => {
-      if (!isPointerDownRef.current) return;
-      isPointerDownRef.current = false;
-
-      window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerup', handlePointerUp);
-      window.removeEventListener('pointercancel', handlePointerUp);
-
-      // If did NOT drag (moved <= 8px), it is a click -> expand immediately!
-      if (!hasMovedRef.current) {
-        ev.stopPropagation();
-        ev.preventDefault();
-        expandApp();
-      }
-    };
-
-    window.addEventListener('pointermove', handlePointerMove);
-    window.addEventListener('pointerup', handlePointerUp);
-    window.addEventListener('pointercancel', handlePointerUp);
+    // If did NOT drag (moved <= 8px), it is a click -> expand immediately!
+    if (!hasMovedRef.current) {
+      e.stopPropagation();
+      e.preventDefault();
+      expandApp();
+    }
   };
 
   // Expand FrogiNotes
@@ -181,6 +184,9 @@ export const FloatingFrogWidget: React.FC = () => {
       >
         <div
           onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
           onClick={handleBubbleClick}
           onDoubleClick={handleBubbleDoubleClick}
           className="relative flex items-center justify-center cursor-pointer active:scale-95 transition-transform outline-none"
