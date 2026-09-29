@@ -52,6 +52,7 @@ export const App: React.FC = () => {
       setIsLandingView(false);
       setEnvironmentMode(false);
     } else if (params.get('collapsed') === 'true') {
+      setIsLandingView(false);
       setCollapsed(true);
       setEnvironmentMode(false);
     } else if (isElectron || params.get('mode') === 'standalone') {

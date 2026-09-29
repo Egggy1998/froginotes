@@ -42,19 +42,14 @@ export const FloatingFrogWidget: React.FC = () => {
       screenY: e.screenY,
     };
 
-    const target = e.currentTarget as HTMLElement;
-    try {
-      target.setPointerCapture(e.pointerId);
-    } catch {}
-
     const handlePointerMove = (ev: PointerEvent) => {
       if (!isPointerDownRef.current) return;
 
       const totalDistX = Math.abs(ev.screenX - startPosRef.current.screenX);
       const totalDistY = Math.abs(ev.screenY - startPosRef.current.screenY);
 
-      // If moved more than 4px, treat as drag
-      if (totalDistX > 4 || totalDistY > 4) {
+      // If moved more than 8px, treat as genuine drag
+      if (totalDistX > 8 || totalDistY > 8) {
         hasMovedRef.current = true;
       }
 
@@ -68,10 +63,14 @@ export const FloatingFrogWidget: React.FC = () => {
           (window as any).electronAPI.moveBubble(deltaX, deltaY);
         } else if (!isElectron) {
           // Move inside browser showcase canvas using functional updater
-          setFloatingPos(prev => ({
-            x: Math.max(0, Math.min(window.innerWidth - 62, prev.x + deltaX)),
-            y: Math.max(0, Math.min(window.innerHeight - 62, prev.y + deltaY)),
-          }));
+          setFloatingPos(prev => {
+            const curX = prev.x === 0 ? window.innerWidth - 88 : prev.x;
+            const curY = prev.y === 0 ? window.innerHeight - 88 : prev.y;
+            return {
+              x: Math.max(10, Math.min(window.innerWidth - 75, curX + deltaX)),
+              y: Math.max(10, Math.min(window.innerHeight - 75, curY + deltaY)),
+            };
+          });
         }
       }
     };
@@ -80,15 +79,11 @@ export const FloatingFrogWidget: React.FC = () => {
       if (!isPointerDownRef.current) return;
       isPointerDownRef.current = false;
 
-      try {
-        target.releasePointerCapture(ev.pointerId);
-      } catch {}
-
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
       window.removeEventListener('pointercancel', handlePointerUp);
 
-      // If did NOT drag (or moved <= 4px), it is a CLICK -> EXPAND!
+      // If did NOT drag (moved <= 8px), it is a click -> expand immediately!
       if (!hasMovedRef.current) {
         ev.stopPropagation();
         ev.preventDefault();
@@ -108,6 +103,18 @@ export const FloatingFrogWidget: React.FC = () => {
     } else {
       setCollapsed(false);
     }
+  };
+
+  const handleBubbleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!hasMovedRef.current) {
+      expandApp();
+    }
+  };
+
+  const handleBubbleDoubleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    expandApp();
   };
 
   // Right-click context menu
@@ -153,15 +160,19 @@ export const FloatingFrogWidget: React.FC = () => {
     }
   };
 
+  const isDefaultPos = floatingPos.x === 0 && floatingPos.y === 0;
+  const webStyle: React.CSSProperties = isDefaultPos
+    ? { right: '24px', bottom: '24px' }
+    : {
+        left: `${Math.max(10, Math.min((typeof window !== 'undefined' ? window.innerWidth : 1200) - 75, floatingPos.x))}px`,
+        top: `${Math.max(10, Math.min((typeof window !== 'undefined' ? window.innerHeight : 800) - 75, floatingPos.y))}px`,
+      };
+
   return (
     <>
       <div
         onContextMenu={handleContextMenu}
-        style={
-          isElectron
-            ? { width: '100vw', height: '100vh' }
-            : { left: `${floatingPos.x}px`, top: `${floatingPos.y}px` }
-        }
+        style={isElectron ? { width: '100vw', height: '100vh' } : webStyle}
         className={`${
           isElectron
             ? 'fixed inset-0 flex items-center justify-center'
@@ -170,6 +181,8 @@ export const FloatingFrogWidget: React.FC = () => {
       >
         <div
           onPointerDown={handlePointerDown}
+          onClick={handleBubbleClick}
+          onDoubleClick={handleBubbleDoubleClick}
           className="relative flex items-center justify-center cursor-pointer active:scale-95 transition-transform outline-none"
         >
           {/* Yellow Radiance Accent Marks Top-Right */}

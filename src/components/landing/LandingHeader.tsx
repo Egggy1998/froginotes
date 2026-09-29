@@ -233,6 +233,11 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
                       <span className="text-[10px] text-[#7A9380]">Mac chạy chip Intel</span>
                     </div>
                   </a>
+
+                  {/* Mac open tip */}
+                  <div className="pt-1.5 pb-0.5 px-2 border-t border-[#EDF3EB] text-[9.5px] text-[#638068] leading-tight">
+                    💡 <span className="font-semibold">Mở trên Mac:</span> Chuột phải vào app chọn <span className="font-semibold text-[#284E34]">Open</span> (hoặc chạy <code className="bg-[#EAF3E7] px-1 py-0.2 rounded font-mono text-[9px]">xattr -cr FrogiNotes.app</code>).
+                  </div>
                 </div>
               </>
             )}

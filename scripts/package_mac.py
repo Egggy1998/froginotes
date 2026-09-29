@@ -1,16 +1,27 @@
 import zipfile
 import os
 import re
+import urllib.request
 
 CACHE_DIR = os.path.expanduser('~/.cache/electron-mac')
 APP_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT_DIR = os.path.join(APP_ROOT, 'release-builds', 'mac')
+os.makedirs(CACHE_DIR, exist_ok=True)
 os.makedirs(OUT_DIR, exist_ok=True)
 
 ARCHS = [
     ('arm64', 'electron-v34.5.8-darwin-arm64.zip', 'FrogiNotes-v1.0.0-macos-arm64.zip'),
     ('x64', 'electron-v34.5.8-darwin-x64.zip', 'FrogiNotes-v1.0.0-macos-x64.zip')
 ]
+
+def ensure_source_zip(source_zip_name):
+    source_zip_path = os.path.join(CACHE_DIR, source_zip_name)
+    if not os.path.exists(source_zip_path):
+        url = f"https://github.com/electron/electron/releases/download/v34.5.8/{source_zip_name}"
+        print(f"Downloading {source_zip_name} from {url}...")
+        urllib.request.urlretrieve(url, source_zip_path)
+        print(f"Downloaded {source_zip_name} ({os.path.getsize(source_zip_path) / 1024 / 1024:.1f} MB)")
+    return source_zip_path
 
 def update_plist(plist_str):
     plist_str = re.sub(r'<key>CFBundleDisplayName</key>\s*<string>[^<]+</string>',
@@ -27,8 +38,22 @@ def update_plist(plist_str):
                        '<key>CFBundleVersion</key>\n\t<string>1.0.0</string>', plist_str)
     return plist_str
 
+README_TEXT = """FrogiNotes cho macOS (v1.0.0)
+=====================================
+HƯỚNG DẪN CÀI ĐẶT & MỞ LẦN ĐẦU TRÊN MAC:
+
+1. Kéo FrogiNotes.app vào thư mục Applications (Ứng dụng) của bạn.
+2. Mở ứng dụng:
+   - Cách 1 (Đơn giản nhất): Chuột phải (hoặc giữ phím Control + Click) vào FrogiNotes.app -> Chọn Open (Mở) -> Bấm Open trong hộp thoại xác nhận.
+   - Cách 2 (Terminal - gỡ hoàn toàn cảnh báo của macOS):
+     Mở Terminal và dán lệnh sau:
+     xattr -cr /Applications/FrogiNotes.app
+
+Chúc bạn có những trải nghiệm ghi chú thật vui cùng FrogiNotes! 🍃
+"""
+
 def build_mac_zip(arch, source_zip_name, out_zip_name):
-    source_zip_path = os.path.join(CACHE_DIR, source_zip_name)
+    source_zip_path = ensure_source_zip(source_zip_name)
     out_zip_path = os.path.join(OUT_DIR, out_zip_name)
 
     print(f"\n==========================================")
@@ -37,6 +62,13 @@ def build_mac_zip(arch, source_zip_name, out_zip_name):
 
     with zipfile.ZipFile(source_zip_path, 'r') as src_z, \
          zipfile.ZipFile(out_zip_path, 'w', compression=zipfile.ZIP_DEFLATED) as out_z:
+
+        # Add README instruction for Mac Gatekeeper
+        readme_info = zipfile.ZipInfo('HUONG-DAN-CAI-DAT-MAC.txt')
+        readme_info.create_system = 3  # UNIX
+        readme_info.external_attr = 0o100644 << 16
+        readme_info.compress_type = zipfile.ZIP_DEFLATED
+        out_z.writestr(readme_info, README_TEXT.encode('utf-8'))
 
         # 1. Copy all files from Electron.app, renaming to FrogiNotes.app
         for item in src_z.infolist():
@@ -62,6 +94,7 @@ def build_mac_zip(arch, source_zip_name, out_zip_name):
 
             # Create new ZipInfo to preserve permissions and symlinks
             zinfo = zipfile.ZipInfo(new_name, date_time=item.date_time)
+            zinfo.create_system = 3  # CRITICAL: UNIX (3) ensures macOS recognizes permissions (0755) and symlinks (0120777)!
             zinfo.external_attr = item.external_attr
             zinfo.compress_type = zipfile.ZIP_DEFLATED
 
@@ -70,12 +103,11 @@ def build_mac_zip(arch, source_zip_name, out_zip_name):
         # 2. Add our app files into FrogiNotes.app/Contents/Resources/app/
         app_files = []
 
-        # package.json (strip secrets keys before bundling is out of scope;
-        # ensure .env* files are never added)
+        # package.json
         pkg_json_path = os.path.join(APP_ROOT, 'package.json')
         app_files.append((pkg_json_path, 'package.json'))
 
-        # Exclude .env* files from dist/electron traversal
+        # Exclude .env* files
         _EXCLUDE_PATTERNS = ('.env', '.env.local', '.env.production', '.env.development')
 
         # electron folder
@@ -99,6 +131,7 @@ def build_mac_zip(arch, source_zip_name, out_zip_name):
         for full_path, rel_path in app_files:
             target_in_zip = f"FrogiNotes.app/Contents/Resources/app/{rel_path.replace(os.sep, '/')}"
             zinfo = zipfile.ZipInfo(target_in_zip)
+            zinfo.create_system = 3  # UNIX
             zinfo.external_attr = 0o100644 << 16  # Regular file with rw-r--r--
             zinfo.compress_type = zipfile.ZIP_DEFLATED
             with open(full_path, 'rb') as f:

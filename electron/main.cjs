@@ -50,15 +50,15 @@ function createMainWindow() {
 
 function createBubbleWindow() {
   const primaryDisplay = screen.getPrimaryDisplay();
-  const { width, height } = primaryDisplay.workAreaSize;
+  const wa = primaryDisplay.workArea;
   const iconPath = path.join(__dirname, '../icon.ico');
   const preloadPath = path.join(__dirname, 'preload.cjs');
 
   bubbleWindow = new BrowserWindow({
     width: 150,
     height: 150,
-    x: width - 180,
-    y: height - 200,
+    x: Math.round(wa.x + wa.width - 165),
+    y: Math.round(wa.y + wa.height - 165),
     frame: false,
     transparent: true,
     alwaysOnTop: true,
@@ -79,7 +79,9 @@ function createBubbleWindow() {
 
   bubbleWindow.on('closed', () => {
     bubbleWindow = null;
-    if (!mainWindow || mainWindow.isDestroyed() || !mainWindow.isVisible()) {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.show();
+    } else {
       app.quit();
     }
   });

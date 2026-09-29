@@ -339,7 +339,7 @@ export const useNotesStore = create<NotesState>((set, get) => ({
   searchQuery: '',
   isCollapsed: false,
   viewMode: 'grid',
-  floatingPos: { x: 1460, y: 770 },
+  floatingPos: { x: 0, y: 0 },
   showNoteModal: false,
   editingNote: null,
   environmentMode: true,
